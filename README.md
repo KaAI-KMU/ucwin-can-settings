@@ -31,6 +31,6 @@ UC-win/Road 상에서 운전 시뮬레이터 사용하기 위한 CAN 세팅
 2. UC-win/Road에 CAN data 전달 (CommonAPI vSomeIP) 
     1. Windows에서 CommonAPI 세팅 [#3](../../issues/3)
     2. UC-win/Road 와 C++ 코드 간 데이터 송수신 ( CommonAPI vSomeIP ) [#4](../../issues/4)
-    3. logging으로 같은 값인지 확인
+    3. logging으로 같은 값인지 확인 [#7](../../issues/7)
 3. UC-win/Road에서 CAN data로 제어 
     1. C++로 새로 개발 [#5](../../issues/5)
