@@ -27,7 +27,7 @@ UC-win/Road 상에서 운전 시뮬레이터 사용하기 위한 CAN 세팅
 ### 프로젝트 계획
 1. PCAN-USB로 k7 simulator CAN data 받기
     1. pcan-usb c++ code 작성 [#2](../../issues/2)
-    2. 브레이크 기능 추가
+    2. 브레이크 기능 추가 [#6](../../issues/6)
 2. UC-win/Road에 CAN data 전달 (CommonAPI vSomeIP) 
     1. Windows에서 CommonAPI 세팅 [#3](../../issues/3)
     2. UC-win/Road 와 C++ 코드 간 데이터 송수신 ( CommonAPI vSomeIP ) [#4](../../issues/4)
