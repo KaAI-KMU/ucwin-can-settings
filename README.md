@@ -26,17 +26,13 @@ UC-win/Road에서는 그 값들을 이용해 차량을 제어하는 코드를 �
 
 <br>
 
-### 참고 사이트
-- [PCAN-USB](https://www.peak-system.com/PCAN-USB.199.0.html?&L=1)
-
-<br>
-
 ### 프로젝트 계획
 1. PCAN-USB로 k7 simulator CAN data 받기
-    1. pcan-usb c++ code 작성 [#2](../../issues/2)
-    2. 브레이크 기능 추가 [#6](../../issues/6)
+    1. [pcan-usb와 시뮬레이터 연결](/simulator-setting/) 
+    2. [pcan-usb c++ code 작성](/pcan-usb/) 
+    3. 브레이크 기능 추가 
 2. UC-win/Road에 CAN data 전달 
-    1. UC-win/Road 와 C++ 코드 간 데이터 송수신 ( Socket ) [#4](../../issues/4)
-    2. logging으로 같은 값인지 확인 [#7](../../issues/7)
+    1. UC-win/Road 와 C++ 코드 간 데이터 송수신 ( Socket ) 
+    2. logging으로 같은 값인지 확인 
 3. UC-win/Road에서 CAN data로 제어 
-    1. C++로 새로 개발 [#5](../../issues/5)
+    1. C++로 새로 개발
