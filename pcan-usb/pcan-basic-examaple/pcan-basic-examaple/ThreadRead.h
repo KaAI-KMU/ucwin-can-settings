@@ -31,6 +31,11 @@ private:
 	/// </summary>
 	bool m_ThreadRun;
 
+	const UINT32 ClusterID = 0x50;
+	const UINT32 APMID = 0x710;
+	const UINT32 AGMID = 0x631;
+	const UINT32 ASMID = 0x711;
+
 public:
 	// ThreadRead constructor
 	//
@@ -159,4 +164,16 @@ private:
 	/// <param name="dataLength">The amount of bytes to take into account wihtin the given data</param>
 	/// <returns>A string with hexadecimal formatted data bytes of a CAN message</returns>
 	std::string GetDataString(BYTE data[], TPCANMessageType msgType, int dataLength);
+
+	/// <summary>
+	/// id가 나에게 필요한 data인지 확인
+	/// </summary>
+	/// <param name="msg">The received PCAN-Basic CAN message</param> 
+	/// <returns> 필요한 데이터면 true, 아니면 false
+	void ValidateId(TPCANMsg msg);
+
+	void Parcing50(TPCANMsg msg);
+	void Parcing631(TPCANMsg msg);
+	void Parcing710(TPCANMsg msg);
+	void Parcing711(TPCANMsg msg);
 };

@@ -14,21 +14,21 @@ ThreadRead::ThreadRead()
 
 	if (stsResult != PCAN_ERROR_OK)
 	{
-		std::cout << "Can not initialize. Please check the defines in the code.\n";
+		std::cout << "Can not initialize. Please check the defines in the code." << std::endl;
 		ShowStatus(stsResult);
-		std::cout << "\n";
-		std::cout << "Closing...\n";
+		std::cout << std::endl;
+		std::cout << "Closing..." << std::endl;
 		system("PAUSE");
 		return;
 	}
 
 	// Reading messages...
-	std::cout << "Successfully initialized.\n";
+	std::cout << "Successfully initialized." << std::endl;
 	m_ThreadRun = true;
 	m_ReadThread = new std::thread(&ThreadRead::ThreadExecute, this);
-	std::cout << "Started reading messages...\n";
-	std::cout << "\n";
-	std::cout << "Closing...\n";
+	std::cout << "Started reading messages..." << std::endl;
+	std::cout << std::endl;
+	std::cout << "Closing..." << std::endl;
 	system("PAUSE");
 }
 
@@ -87,79 +87,90 @@ TPCANStatus ThreadRead::ReadMessage()
 
 	// We execute the "Read" function of the PCANBasic   
 	TPCANStatus stsResult = CAN_Read(PcanHandle, &CANMsg, &CANTimeStamp);
-	if (stsResult != PCAN_ERROR_QRCVEMPTY)
+	if (stsResult != PCAN_ERROR_QRCVEMPTY) {
 		// We process the received message
-		ProcessMessageCan(CANMsg, CANTimeStamp);
+		ValidateId(CANMsg);
+		//ProcessMessageCan(CANMsg, CANTimeStamp);
+	}
 
 	return stsResult;
+}
+
+void ThreadRead::ValidateId(TPCANMsg msg)
+{
+	std::cout << "==================" << std::endl;
+	//if (msg.ID == ClusterID) Parcing50(msg);
+	//else if (msg.ID == AGMID) Parcing631(msg);
+	if (msg.ID == APMID) Parcing710(msg);
+	else if (msg.ID == ASMID) Parcing711(msg);
 }
 
 void ThreadRead::ProcessMessageCan(TPCANMsg msg, TPCANTimestamp itsTimeStamp)
 {
 	UINT64 microsTimestamp = ((UINT64)itsTimeStamp.micros + 1000 * (UINT64)itsTimeStamp.millis + 0x100000000 * 1000 * itsTimeStamp.millis_overflow);
 
-	std::cout << "Type: " << GetMsgTypeString(msg.MSGTYPE) << "\n";
-	std::cout << "ID: " << GetIdString(msg.ID, msg.MSGTYPE) << "\n";
+	std::cout << "Type: " << GetMsgTypeString(msg.MSGTYPE) << std::endl;
+	std::cout << "ID: " << GetIdString(msg.ID, msg.MSGTYPE) << std::endl;
 	char result[MAX_PATH] = { 0 };
 	sprintf_s(result, sizeof(result), "%i", msg.LEN);
-	std::cout << "Length: " << result << "\n";
-	std::cout << "Time: " << GetTimeString(microsTimestamp) << "\n";
-	std::cout << "Data: " << GetDataString(msg.DATA, msg.MSGTYPE, msg.LEN) << "\n";
-	std::cout << "----------------------------------------------------------\n";
+	std::cout << "Length: " << result << std::endl;
+	std::cout << "Time: " << GetTimeString(microsTimestamp) << std::endl;
+	std::cout << "Data: " << GetDataString(msg.DATA, msg.MSGTYPE, msg.LEN) << std::endl;
+	std::cout << "----------------------------------------------------------" << std::endl;
 }
 
 void ThreadRead::ProcessMessageCanFD(TPCANMsgFD msg, TPCANTimestampFD itsTimeStamp)
 {
-	std::cout << "Type: " << GetMsgTypeString(msg.MSGTYPE) << "\n";
-	std::cout << "ID: " << GetIdString(msg.ID, msg.MSGTYPE) << "\n";
-	std::cout << "Length: " << GetLengthFromDLC(msg.DLC) << "\n";
-	std::cout << "Time: " << GetTimeString(itsTimeStamp) << "\n";
-	std::cout << "Data: " << GetDataString(msg.DATA, msg.MSGTYPE, GetLengthFromDLC(msg.DLC)) << "\n";
-	std::cout << "----------------------------------------------------------\n";
+	std::cout << "Type: " << GetMsgTypeString(msg.MSGTYPE) << std::endl;
+	std::cout << "ID: " << GetIdString(msg.ID, msg.MSGTYPE) << std::endl;
+	std::cout << "Length: " << GetLengthFromDLC(msg.DLC) << std::endl;
+	std::cout << "Time: " << GetTimeString(itsTimeStamp) << std::endl;
+	std::cout << "Data: " << GetDataString(msg.DATA, msg.MSGTYPE, GetLengthFromDLC(msg.DLC)) << std::endl;
+	std::cout << "----------------------------------------------------------" << std::endl;
 }
 
 void ThreadRead::ShowConfigurationHelp()
 {
-	std::cout << "=========================================================================================\n";
-	std::cout << "|                           PCAN-Basic ThreadRead Example                                |\n";
-	std::cout << "=========================================================================================\n";
-	std::cout << "Following parameters are to be adjusted before launching, according to the hardware used |\n";
-	std::cout << "                                                                                         |\n";
-	std::cout << "* PcanHandle: Numeric value that represents the handle of the PCAN-Basic channel to use. |\n";
-	std::cout << "              See 'PCAN-Handle Definitions' within the documentation                     |\n";
-	std::cout << "* IsFD: Boolean value that indicates the communication mode, CAN (false) or CAN-FD (true)|\n";
-	std::cout << "* Bitrate: Numeric value that represents the BTR0/BR1 bitrate value to be used for CAN   |\n";
-	std::cout << "           communication                                                                 |\n";
-	std::cout << "* BitrateFD: String value that represents the nominal/data bitrate value to be used for  |\n";
-	std::cout << "             CAN-FD communication                                                        |\n";
-	std::cout << "=========================================================================================\n";
-	std::cout << "\n";
+	std::cout << "=========================================================================================" << std::endl;
+	std::cout << "|                           PCAN-Basic ThreadRead Example                                |" << std::endl;
+	std::cout << "=========================================================================================" << std::endl;
+	std::cout << "Following parameters are to be adjusted before launching, according to the hardware used |" << std::endl;
+	std::cout << "                                                                                         |" << std::endl;
+	std::cout << "* PcanHandle: Numeric value that represents the handle of the PCAN-Basic channel to use. |" << std::endl;
+	std::cout << "              See 'PCAN-Handle Definitions' within the documentation                     |" << std::endl;
+	std::cout << "* IsFD: Boolean value that indicates the communication mode, CAN (false) or CAN-FD (true)|" << std::endl;
+	std::cout << "* Bitrate: Numeric value that represents the BTR0/BR1 bitrate value to be used for CAN   |" << std::endl;
+	std::cout << "           communication                                                                 |" << std::endl;
+	std::cout << "* BitrateFD: String value that represents the nominal/data bitrate value to be used for  |" << std::endl;
+	std::cout << "             CAN-FD communication                                                        |" << std::endl;
+	std::cout << "=========================================================================================" << std::endl;
+	std::cout << std::endl;
 }
 
 void ThreadRead::ShowCurrentConfiguration()
 {
-	std::cout << "Parameter values used\n";
-	std::cout << "----------------------\n";
+	std::cout << "Parameter values used" << std::endl;
+	std::cout << "----------------------" << std::endl;
 	char buffer[MAX_PATH];
 	FormatChannelName(PcanHandle, buffer, IsFD);
-	std::cout << "* PCANHandle: " << buffer << "\n";
+	std::cout << "* PCANHandle: " << buffer << std::endl;
 	if (IsFD)
-		std::cout << "* IsFD: True\n";
+		std::cout << "* IsFD: True" << std::endl;
 	else
-		std::cout << "* IsFD: False\n";
+		std::cout << "* IsFD: False" << std::endl;
 	ConvertBitrateToString(Bitrate, buffer);
-	std::cout << "* Bitrate: " << buffer << "\n";
-	std::cout << "* BitrateFD: " << BitrateFD << "\n";
-	std::cout << "\n";
+	std::cout << "* Bitrate: " << buffer << std::endl;
+	std::cout << "* BitrateFD: " << BitrateFD << std::endl;
+	std::cout << std::endl;
 }
 
 void ThreadRead::ShowStatus(TPCANStatus status)
 {
-	std::cout << "=========================================================================================\n";
+	std::cout << "=========================================================================================" << std::endl;
 	char buffer[MAX_PATH];
 	GetFormattedError(status, buffer);
-	std::cout << buffer << "\n";
-	std::cout << "=========================================================================================\n";
+	std::cout << buffer << std::endl;
+	std::cout << "=========================================================================================" << std::endl;
 }
 
 void ThreadRead::FormatChannelName(TPCANHandle handle, LPSTR buffer, bool isFD)
@@ -356,7 +367,7 @@ std::string ThreadRead::GetIdString(UINT32 id, TPCANMessageType msgType)
 		sprintf_s(result, sizeof(result), "%08Xh", id);
 		return result;
 	}
-	sprintf_s(result, sizeof(result), "%03Xh", id);
+	sprintf_s(result, sizeof(result), "%03X", id);
 	return result;
 }
 
@@ -399,4 +410,251 @@ std::string ThreadRead::GetDataString(BYTE data[], TPCANMessageType msgType, int
 
 		return result;
 	}
+}
+
+void ThreadRead::Parcing50(TPCANMsg msg)
+{
+	const UINT8 lamp = msg.DATA[1] & 0x0F;
+	const UINT8 wiper = msg.DATA[1] & 0xF0;
+	const UINT8 wiperOn = msg.DATA[2] & 0x0F;
+	const UINT8 lampOn = msg.DATA[2] & 0xF0;
+
+	std::cout << "lamp: " << lamp << std::endl;
+	switch (lamp)
+	{
+	case 0x00:
+		std::cout << "Tail lamp off" << std::endl;
+		break;
+	case 0x01:
+		std::cout << "Tail lamp on" << std::endl;
+		break;
+	case 0x02:
+		std::cout << "High beam on" << std::endl;
+		break;
+	default:
+		std::cout << "None" << std::endl;
+	}
+
+	std::cout << "wiper: " << wiper << std::endl;
+	switch (wiper) 
+	{
+	case 0x20:
+		std::cout << "Wiper off" << std::endl;
+		break;
+	case 0x40:
+		std::cout << "Wipe Auto" << std::endl;
+		break;
+	case 0x60:
+		std::cout << "Wiper Low" << std::endl;
+		break;
+	case 0x80:
+		std::cout << "Wiper High" << std::endl;
+		break;
+	default:
+		std::cout << "None" << std::endl;
+	}
+
+	std::cout << "wiper_on: " << wiperOn << std::endl;
+	switch (wiperOn)
+	{
+	case 0x01:
+		std::cout << "Wiper Trigger" << std::endl;
+		break;
+	case 0x08:
+		std::cout << "Wiper Mist" << std::endl;
+		break;
+	default:
+		std::cout << "None" << std::endl;
+	}
+
+	std::cout << "lamp_on: " << lampOn << std::endl;
+	switch (lampOn)
+	{
+	case 0x10:
+		std::cout << "Turn right lamp on" << std::endl;
+		break;
+	case 0x20:
+		std::cout << "Turn left lamp on" << std::endl;
+		break;
+	case 0x40:
+		std::cout << "High beam Hold" << std::endl;
+		break;
+	default:
+		std::cout << "None" << std::endl;
+	}
+}
+
+void ThreadRead::Parcing631(TPCANMsg msg)
+{
+	const UINT8 status = msg.DATA[0] & 0x0F;
+	const UINT8 reserved = msg.DATA[0] & 0xF0;
+	const UINT8 TM_G_SEL_DISP = msg.DATA[1] & 0x0F;
+
+	switch (TM_G_SEL_DISP)
+	{
+	case 0x00:
+		std::cout << "Parking" << std::endl;
+		break;
+	case 0x05:
+		std::cout << "Drive" << std::endl;
+		break;
+	case 0x06:
+		std::cout << "Rear" << std::endl;
+		break;
+	case 0x07:
+		std::cout << "Nutral" << std::endl;
+		break;
+	default:
+		std::cout << "None 631" << std::endl;
+	}
+}
+
+void ThreadRead::Parcing710(TPCANMsg msg)
+{
+	/*
+	const UINT8 mode = msg.DATA[0] & 0x01;
+	const UINT8 modeFeedback = msg.DATA[0] & 0x70;
+	const UINT8 errorStatus = msg.DATA[0] & 0xF0;
+	switch (mode)
+	{
+	case 0x00:
+		std::cout << "Manual 710" << std::endl;
+		break;
+	case 0x01:
+		std::cout << "Auto 710" << std::endl;
+		break;
+	default:
+		std::cout << "None mode 710" << std::endl;
+	}
+
+	switch (modeFeedback)
+	{
+	case 0x00:
+		std::cout << "Abnormal state 710" << std::endl;
+		break;
+	case 0x02:
+		std::cout << "Initial state 710" << std::endl;
+		break;
+	case 0x04:
+		std::cout << "Operating state 710" << std::endl;
+		break;
+	case 0x08:
+		std::cout << "Overriding error 710" << std::endl;
+		break;
+	default:
+		std::cout << "None modeFeedback 710" << std::endl;
+	}
+
+	switch (errorStatus)
+	{
+	case 0x00: 
+		std::cout << "None errorStatus 710" << std::endl;
+		break;
+	case 0x10:
+		std::cout << "Command Controller Coummunication Error 710" << std::endl;
+		break;
+	case 0x20:
+		std::cout << "MDPS Error 710" << std::endl;
+		break;
+	case 0x40:
+		std::cout << "SAPS Error 710" << std::endl;
+		break;
+	default:
+		std::cout << "error errorStatus 710" << std::endl;
+	}
+	*/
+	int data = msg.DATA[1] + msg.DATA[2] * 256;
+	double steeringAngleFeedback = 0;
+	if (data < 1000) 
+		steeringAngleFeedback = data / 10;
+	else {
+		data = data ^ 0b1111111111111111;
+		steeringAngleFeedback = ~data / 10;
+	}
+	std::cout << "steering angle feedback 710: " << steeringAngleFeedback << std::endl;
+
+	/*
+	int desiredData = msg.DATA[3] + msg.DATA[4] * 256;
+	double desiredSteeringAngle = 0;
+	if (desiredData < 1000)
+		desiredSteeringAngle = desiredData / 10;
+	else {
+		desiredData = data ^ 0b1111111111111111;
+		desiredSteeringAngle = ~desiredData / 10;
+	}
+	std::cout << "desired steering angle 710: " << desiredSteeringAngle << std::endl;
+	*/
+}
+
+void ThreadRead::Parcing711(TPCANMsg msg)
+{
+	const UINT8 accel = msg.DATA[5] + msg.DATA[6] * 256;
+	std::cout << "accel: " << (int)accel << std::endl;
+
+	/*
+	const UINT8 mode = msg.DATA[0] & 0x01;
+	const UINT8 modeFeedback = msg.DATA[0] & 0x0E;
+	const UINT8 errorStatus = msg.DATA[0] & 0xF0;
+
+	switch (mode)
+	{
+	case 0x00:
+		std::cout << "Manual 711" << std::endl;
+		break;
+	case 0x01:
+		std::cout << "Auto 711" << std::endl;
+		break;
+	default:
+		std::cout << "None 711" << std::endl;
+	}
+
+	switch (modeFeedback)
+	{
+	case 0x00:
+		std::cout << "Abnormal state 711" << std::endl;
+		break;
+	case 0x02:
+		std::cout << "Initial state 711" << std::endl;
+		break;
+	case 0x04:
+		std::cout << "Operating state 711" << std::endl;
+		break;
+	default:
+		std::cout << "None 711" << std::endl;
+	}
+
+	switch (errorStatus)
+	{
+	case 0x00:
+		std::cout << "None errorStatus 711" << std::endl;
+		break;
+	case 0x10:
+		std::cout << "Command Controller Coummunication Error 711" << std::endl;
+		break;
+	case 0x20:
+		std::cout << "Brake actuator Error 711" << std::endl;
+		break;
+	case 0x40:
+		std::cout << "APS Error 711" << std::endl;
+		break;
+	case 0x80:
+		std::cout << "OBD-II or GW Error 711" << std::endl;
+		break;
+	default:
+		std::cout << "error errorStatus 711" << std::endl;
+	}
+
+	const UINT8 brakePedal = msg.DATA[4];
+	switch (brakePedal)
+	{
+	case 0x00:
+		std::cout << "Brake pedal: off 711" << std::endl;
+		break;
+	case 0xFF:
+		std::cout << "Brake pedal: on 711" << std::endl;
+		break;
+	default:
+		std::cout << "error brakePedal 711" << std::endl;
+	}
+	*/
 }
