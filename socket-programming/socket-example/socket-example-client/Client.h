@@ -11,6 +11,7 @@ private:
     SOCKET sock;
     sockaddr_in server;
     const int port = 8888;
+    const std::string ipAddress = "127.0.0.1";
 
 public:
     Client();

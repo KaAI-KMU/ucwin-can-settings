@@ -16,7 +16,7 @@ Client::Client()
 
     // Set server information
     server.sin_family = AF_INET;
-    server.sin_addr.s_addr = inet_addr("127.0.0.1"); // Set to server IP address
+    server.sin_addr.s_addr = inet_addr(ipAddress.c_str()); // Set to server IP address
     server.sin_port = htons(port); // Set to server port number
 }
 
@@ -32,8 +32,8 @@ void Client::ConnectToServer()
 void Client::SendData()
 {
     // Send data to server
-    char message[] = "Hello, server!";
-    if (send(sock, message, strlen(message), 0) < 0) {
+    const std::string message = "Hello, server!";
+    if (send(sock, message.c_str(), message.size(), 0) < 0) {
         std::cerr << "Sending data failed" << std::endl;
         exit(EXIT_FAILURE);
     }
@@ -42,7 +42,7 @@ void Client::SendData()
 void Client::ReceiveData()
 {
     // Receive data from server
-    char buffer[1024] = { 0 };
+    char buffer[1024] = {0};
     if (recv(sock, buffer, 1024, 0) < 0) {
         std::cerr << "Receiving data failed" << std::endl;
         exit(EXIT_FAILURE);

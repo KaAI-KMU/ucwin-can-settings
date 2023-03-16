@@ -53,8 +53,8 @@ void Server::ReceiveData()
 void Server::SendData()
 {
     // Send data to client
-    char message[] = "Hello, client!";
-    if (send(newSock, message, strlen(message), 0) < 0) {
+    const std::string message = "Hello, client!";
+    if (send(newSock, message.c_str(), message.size(), 0) < 0) {
         std::cerr << "Sending data failed" << std::endl;
         exit(EXIT_FAILURE);
     }
