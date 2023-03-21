@@ -103,8 +103,6 @@ TPCANStatus ThreadRead::ReadMessage()
 	if (stsResult != PCAN_ERROR_QRCVEMPTY) {
 		// We process the received message
 		ValidateId(CANMsg);
-		std::cout << GetIdString(CANMsg.ID, CANMsg.MSGTYPE) << " ";
-		std::cout << GetDataString(CANMsg.DATA, CANMsg.MSGTYPE, CANMsg.LEN) << std::endl;
 		// ProcessMessageCan(CANMsg, CANTimeStamp);
 	}
 
@@ -113,10 +111,11 @@ TPCANStatus ThreadRead::ReadMessage()
 
 void ThreadRead::ValidateId(TPCANMsg msg)
 {
-	if (msg.ID == 0x50  ||
-		msg.ID == 0x631 ||
-		msg.ID == 0x710 ||
-		msg.ID == 0x711) {
+	const UINT32 id = msg.ID;
+	if (id == 0x50  ||
+		id == 0x631 ||
+		id == 0x710 ||
+		id == 0x711) {
 		SendData(msg);
 	}
 }
@@ -428,133 +427,6 @@ std::string ThreadRead::GetDataString(BYTE data[], TPCANMessageType msgType, int
 	}
 }
 
-void ThreadRead::Parcing50(TPCANMsg msg)
-{
-	const UINT8 lamp = msg.DATA[1] & 0x0F;
-	const UINT8 wiper = msg.DATA[1] & 0xF0;
-	const UINT8 wiperOn = msg.DATA[2] & 0x0F;
-	const UINT8 lampOn = msg.DATA[2] & 0xF0;
-
-	std::cout << "lamp: " << lamp << std::endl;
-	switch (lamp)
-	{
-	case 0x00:
-		std::cout << "Tail lamp off" << std::endl;
-		break;
-	case 0x01:
-		std::cout << "Tail lamp on" << std::endl;
-		break;
-	case 0x02:
-		std::cout << "High beam on" << std::endl;
-		break;
-	default:
-		std::cout << "None" << std::endl;
-	}
-
-	std::cout << "wiper: " << wiper << std::endl;
-	switch (wiper)
-	{
-	case 0x20:
-		std::cout << "Wiper off" << std::endl;
-		break;
-	case 0x40:
-		std::cout << "Wipe Auto" << std::endl;
-		break;
-	case 0x60:
-		std::cout << "Wiper Low" << std::endl;
-		break;
-	case 0x80:
-		std::cout << "Wiper High" << std::endl;
-		break;
-	default:
-		std::cout << "None" << std::endl;
-	}
-
-	std::cout << "wiper_on: " << wiperOn << std::endl;
-	switch (wiperOn)
-	{
-	case 0x01:
-		std::cout << "Wiper Trigger" << std::endl;
-		break;
-	case 0x08:
-		std::cout << "Wiper Mist" << std::endl;
-		break;
-	default:
-		std::cout << "None" << std::endl;
-	}
-
-	std::cout << "lamp_on: " << lampOn << std::endl;
-	switch (lampOn)
-	{
-	case 0x10:
-		std::cout << "Turn right lamp on" << std::endl;
-		break;
-	case 0x20:
-		std::cout << "Turn left lamp on" << std::endl;
-		break;
-	case 0x40:
-		std::cout << "High beam Hold" << std::endl;
-		break;
-	default:
-		std::cout << "None" << std::endl;
-	}
-}
-
-void ThreadRead::Parcing631(TPCANMsg msg)
-{
-	const UINT8 TM_G_SEL_DISP = msg.DATA[1] & 0x0F;
-
-	switch (TM_G_SEL_DISP)
-	{
-	case 0x00:
-		std::cout << "Parking" << std::endl;
-		break;
-	case 0x05:
-		std::cout << "Drive" << std::endl;
-		break;
-	case 0x06:
-		std::cout << "Rear" << std::endl;
-		break;
-	case 0x07:
-		std::cout << "Nutral" << std::endl;
-		break;
-	default:
-		std::cout << "None 631" << std::endl;
-	}
-}
-
-void ThreadRead::Parcing710(TPCANMsg msg)
-{
-	int data = msg.DATA[1] + msg.DATA[2] * 256;
-	double steeringAngleFeedback = 0;
-	if (data < 1000)
-		steeringAngleFeedback = data / 10;
-	else {
-		data = data ^ 0b1111111111111111;
-		steeringAngleFeedback = ~data / 10;
-	}
-	std::cout << "steering angle feedback 710: " << steeringAngleFeedback << std::endl;
-}
-
-void ThreadRead::Parcing711(TPCANMsg msg)
-{
-	const UINT8 accel = msg.DATA[5] + msg.DATA[6] * 256;
-	std::cout << "accel: " << (int)accel << std::endl;
-	
-	const UINT8 brakePedal = msg.DATA[4];
-	switch (brakePedal)
-	{
-	case 0x00:
-		std::cout << "Brake pedal: off 711" << std::endl;
-		break;
-	case 0xFF:
-		std::cout << "Brake pedal: on 711" << std::endl;
-		break;
-	default:
-		std::cout << "error brakePedal 711" << std::endl;
-	}
-}
-
 void ThreadRead::InitializeWinsock()
 {
 	// Initialize Winsock
@@ -617,11 +489,12 @@ void ThreadRead::ReceiveData()
 
 void ThreadRead::SendData(TPCANMsg msg)
 {
-	// Send data to client
-	const std::string message = 
-		(char*)msg.ID + GetDataString(msg.DATA, msg.MSGTYPE, msg.ID);
-
-	if (send(newSock, message.c_str(), message.size(), 0) < 0) {
+	// Send data to cliente
+	const int bufferSize = sizeof(msg.DATA) + sizeof(msg.ID);
+	char buffer[bufferSize];
+	memcpy(buffer, &msg.DATA, sizeof(msg.DATA));
+	memcpy(buffer + sizeof(msg.DATA), &msg.ID, sizeof(msg.ID));
+	if (send(newSock, buffer, bufferSize, 0) < 0) {
 		std::cerr << "Sending data failed" << std::endl;
 		exit(EXIT_FAILURE);
 	}

@@ -47,10 +47,6 @@ private:
 
 	// Parcing CAN data
 	void ValidateId(TPCANMsg msg);
-	void Parcing50(TPCANMsg msg);
-	void Parcing631(TPCANMsg msg);
-	void Parcing710(TPCANMsg msg);
-	void Parcing711(TPCANMsg msg);
 
 	// Winsock
 	void InitializeWinsock();
@@ -59,5 +55,5 @@ private:
 	void BindSock();
 	void AcceptConnection();
 	void ReceiveData();
-	void SendData(const TPCANMsg msg);
+	void SendData(TPCANMsg msg);
 };

@@ -4,6 +4,7 @@ int main() {
     Client client;
     client.ConnectToServer();
     client.SendData();
-    client.ReceiveData();
+    while(1)
+        client.ReceiveData();
     return 0;
 }
