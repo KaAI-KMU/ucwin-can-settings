@@ -2,7 +2,7 @@
 
 ControlBySimulator::ControlBySimulator()
 {
-
+    
 }
 
 ControlBySimulator::~ControlBySimulator()
@@ -25,7 +25,7 @@ void ControlBySimulator::StartProgram()
     ribbonGroup->SetCaption(L"Control By Simulator");
 
     ribbonButton1 = ribbonGroup->CreateButton(L"ButtonControlBySimulator1");
-    ribbonButton1->SetCaption(L"Get CAN data");
+    ribbonButton1->SetCaption(L"Set winsocket");
     ribbonButton1->SetWidth(120);
     Cb_RibbonMenuItemOnClick callback1 = 
         std::bind(&ControlBySimulator::OnButtonGetCANDataClick, this);
@@ -55,6 +55,10 @@ void ControlBySimulator::StopProgram()
     ribbonTab->DeleteGroup(ribbonGroup);
     if (ribbonTab->GetRibbonGroupsCount() == 0)
         g_applicationServices->GetMainForm()->GetMainRibbonMenu()->DeleteTab(ribbonTab);
+
+    // Close socket and clean up Winsock
+    closesocket(sock);
+    WSACleanup();
 }
 
 void ControlBySimulator::OnTransientDeleted(F8TransientInstanceProxy instance)
@@ -100,6 +104,10 @@ void ControlBySimulator::AddControlledInstance(F8TransientCarInstanceProxy inst)
         std::bind(&ControlBySimulator::OnVehicleBeforeCalculateMovement, this, std::placeholders::_1, std::placeholders::_2);
     data.cbHandleOnBeforeCalculateMovement = 
         inst->RegisterCallbackOnBeforeCalculateMovement(callback1);
+    Cb_TransientOnBeforeCalculateMovement callback2 =
+        std::bind(&ControlBySimulator::ReceiveCANData, this);
+    data.cbReceiveCANData =
+        inst->RegisterCallbackOnBeforeCalculateMovement(callback2);
     vehicleDataDict.insert(std::make_pair(inst->GetID(), data));
 }
 
@@ -117,30 +125,117 @@ void ControlBySimulator::ControlVehicle(F8TransientCarInstanceProxy& proxyCar, d
     decltype(vehicleDataDict)::iterator itr;
     itr = vehicleDataDict.find(proxyCar->GetID());
     if (itr != vehicleDataDict.end()) {
-        const auto& data = itr->second;
-        double steering = data.steering;
-        double throttle = data.throttle;
-        double brake = data.brake;
 
         proxyCar->SetEngineOn(true);
-        proxyCar->SetSteering(steering);
-        proxyCar->SetThrottle(throttle);
-        proxyCar->SetBrake(brake);
+        proxyCar->SetSteering(mSteering);
+        proxyCar->SetThrottle(mThrottle);
+        proxyCar->SetBrake(mBrake);
         proxyCar->SetClutch(0.0);
     }
 }
 
 void ControlBySimulator::OnButtonGetCANDataClick()
 {
-    ReceiveCANData();
+    InitializeSock();
+    ConnectToServer();
+}
+
+void ControlBySimulator::InitializeSock()
+{
+    // Initialize Winsock
+    if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0) {
+        std::cerr << "WSAStartup failed" << std::endl;
+        exit(EXIT_FAILURE);
+    }
+
+    // Create a socket
+    if ((sock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP)) == INVALID_SOCKET) {
+        std::cerr << "Socket creation failed" << std::endl;
+        exit(EXIT_FAILURE);
+    }
+
+    // Set server information
+    server.sin_family = AF_INET;
+    server.sin_addr.s_addr = inet_addr(ipAddress.c_str()); // Set to server IP address
+    server.sin_port = htons(port); // Set to server port number
+}
+
+void ControlBySimulator::ConnectToServer()
+{
+    // Connect to server
+    if (connect(sock, (sockaddr*)&server, sizeof(server)) < 0) {
+        std::cerr << "Connection failed" << std::endl;
+        exit(EXIT_FAILURE);
+    }
 }
 
 void ControlBySimulator::ReceiveCANData()
 {
-    DataParser();
+    // Receive data from server
+    char buffer[1024] = { 0 };
+    if (recv(sock, buffer, 1024, 0) < 0) {
+        std::cerr << "Receiving data failed" << std::endl;
+        exit(EXIT_FAILURE);
+    }
+    else {
+        std::string id = GetIDString(buffer);
+        DataParser(std::stoi(id), buffer);
+    }
 }
 
-void ControlBySimulator::DataParser()
+std::string ControlBySimulator::GetIDString(char buffer[])
 {
+    char strTemp[MAX_PATH] = { 0 };
+    std::string id = "";
+    for (int i = 9; i > 7; i--) // little endian 때문에 반대로 for 문을 돌린다
+    {
+        sprintf_s(strTemp, sizeof(strTemp), "%X", buffer[i]);
+        id.append(strTemp);
+    }
+    return id;
+}
+
+void ControlBySimulator::DataParser(int id, char buffer[])
+{
+    switch (id) {
+    case 710: // steering
+        Parser710(buffer);
+        break;
+    case 711: // throttle
+        Parser711(buffer);
+        break;
+    }
+}
+
+void ControlBySimulator::Parser710(char buffer[])
+{
+    int tmp1 = buffer[1];
+    int tmp2 = buffer[2];
+    int tmp3 = tmp2 * 256 + tmp1;
     
+    tmp3 = (double)tmp3;
+    if (tmp3 < 1000)
+        tmpSteer = tmp3 / 10;
+    else {
+        tmp3 = tmp3 ^ 0b1111111111111111;
+        tmpSteer = ~tmp3 / 10;
+    }
+    
+    tmpSteer = (tmpSteer + 6222) / 1000; // 큰 수를 나눌수록 핸들 감도 낮아짐
+    if (tmpSteer < 1 && tmpSteer > -1) {
+        mSteering = -tmpSteer;
+    }
+}
+
+void ControlBySimulator::Parser711(char buffer[])
+{
+    int tmp1 = buffer[5];
+    int tmp2 = buffer[6];
+    int tmp3 = tmp2 * 256 + tmp1;
+    
+    if (tmp3 > 610) {
+        tmpThrottle = ((double)tmp3 - 610) / (3444 - 610);
+        if (tmpThrottle < 1)
+            mThrottle = tmpThrottle;
+    }
 }

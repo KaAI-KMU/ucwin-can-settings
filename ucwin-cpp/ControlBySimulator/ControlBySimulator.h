@@ -1,31 +1,48 @@
 #pragma once
 #include "F8API.h"
 #include "pch.h"
-#include "windows.h"
 #include <map>
 #include <iostream>
 #include <memory>
+#include <WinSock2.h>
+#include <sstream>
+
+#pragma comment(lib, "ws2_32")
 
 struct VehicleData {
 	F8TransientInstanceProxy proxy;
 	void* cbHandleOnBeforeCalculateMovement;
+	void* cbReceiveCANData;
 	double time = 0.0;
 	double steering = 0.0;
-	double throttle = 1.0;
+	double throttle = 0.0;
 	double brake = 0.0;
 };
-
-static const double pi = 3.141592653589793;
 
 class ControlBySimulator
 {
 private:
+	// uc-win member
 	F8MainRibbonTabProxy ribbonTab;
 	F8MainRibbonGroupProxy ribbonGroup;
 	F8MainRibbonButtonProxy ribbonButton1, ribbonButton2;
-	void* p_cbHandleButtonClick1, * p_cbHandleButtonClick2, * p_cbHandleTransientDeleted;
+	void* p_cbHandleButtonClick1, * p_cbHandleButtonClick2, 
+		* p_cbHandleTransientDeleted;
 
 	std::map<int, VehicleData> vehicleDataDict;
+
+	// winsock member
+	WSADATA wsaData;
+	SOCKET sock;
+	sockaddr_in server;
+	const int port = 8888;
+	const std::string ipAddress = "127.0.0.1";
+
+	double mSteering = 0.0;
+	double mThrottle = 0.0;
+	double mBrake    = 0.0;
+	double tmpSteer = 0.0;
+	double tmpThrottle = 0.0;
 	
 public:
 	ControlBySimulator();
@@ -43,6 +60,11 @@ private:
 	void ControlVehicle(F8TransientCarInstanceProxy& proxyCar, double time);
 
 	void OnButtonGetCANDataClick();
+	void InitializeSock();
+	void ConnectToServer();
 	void ReceiveCANData();
-	void DataParser();
+	std::string GetIDString(char buffer[]);
+	void DataParser(int id, char buffer[]);
+	void Parser710(char buffer[]);
+	void Parser711(char buffer[]);
 };
