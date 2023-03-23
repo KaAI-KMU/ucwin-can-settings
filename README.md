@@ -4,6 +4,8 @@ UC-win/Road 상에서 운전 시뮬레이터를 사용하기 위한 CAN 세팅
 <br>
 
 ## 프로젝트 개요
+
+![ezgif com-gif-maker](https://user-images.githubusercontent.com/111988634/227136987-07fd49c7-265f-4e49-950a-c5a49c310e34.gif)
 기존의 Delphi로 작성된 UC-win/Road 코드를 C++로 변경하는 첫 프로젝트이다. 또한 기존의 CAN 코드들이 인수인계가 제대로 되지 않고 유지보수가 되지 않아 github를 활용해 새롭게 정리하려고 한다. 
 
 PCAN-USB를 사용해서 CAN data를 받는다. 
