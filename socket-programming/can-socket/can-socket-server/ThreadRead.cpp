@@ -7,7 +7,7 @@ ThreadRead::ThreadRead()
 	SetServer();
 	BindSock();
 	AcceptConnection();
-	ReceiveData();
+	//ReceiveData();
 
 	ShowConfigurationHelp(); // Shows information about this sample
 	ShowCurrentConfiguration(); // Shows the current parameters configuration
@@ -103,7 +103,7 @@ TPCANStatus ThreadRead::ReadMessage()
 	if (stsResult != PCAN_ERROR_QRCVEMPTY) {
 		// We process the received message
 		ValidateId(CANMsg);
-		// ProcessMessageCan(CANMsg, CANTimeStamp);
+		//ProcessMessageCan(CANMsg, CANTimeStamp);
 	}
 
 	return stsResult;
@@ -112,9 +112,7 @@ TPCANStatus ThreadRead::ReadMessage()
 void ThreadRead::ValidateId(TPCANMsg msg)
 {
 	const UINT32 id = msg.ID;
-	if (id == 0x50  ||
-		id == 0x631 ||
-		id == 0x710 ||
+	if (id == 0x710 ||
 		id == 0x711) {
 		SendData(msg);
 	}
@@ -489,11 +487,13 @@ void ThreadRead::ReceiveData()
 
 void ThreadRead::SendData(TPCANMsg msg)
 {
-	// Send data to cliente
+	/// Send data to client
+	/// buffer = Data + ID
 	const int bufferSize = sizeof(msg.DATA) + sizeof(msg.ID);
 	char buffer[bufferSize];
 	memcpy(buffer, &msg.DATA, sizeof(msg.DATA));
 	memcpy(buffer + sizeof(msg.DATA), &msg.ID, sizeof(msg.ID));
+	std::cout << "Server: " << GetIdString(msg.ID, msg.MSGTYPE) << " " << GetDataString(msg.DATA, msg.MSGTYPE, msg.LEN) << std::endl;
 	if (send(newSock, buffer, bufferSize, 0) < 0) {
 		std::cerr << "Sending data failed" << std::endl;
 		exit(EXIT_FAILURE);

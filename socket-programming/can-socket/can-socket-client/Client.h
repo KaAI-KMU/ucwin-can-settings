@@ -11,7 +11,9 @@ private:
     double mSteering = 0;
     double mThrottle = 0;
     double mBrake = 0;
-    bool isBrake = false;
+
+    // std::vector<double> vecSteer;
+    // std::vector<double> vecThrottle;
 
 public:
     Client();
@@ -23,8 +25,6 @@ public:
 
 private:
     std::string GetIDString(char buffer[]);
-    void Parser50(char buffer[]);
-    void Parser631(char buffer[]);
     void Parser710(char buffer[]);
     void Parser711(char buffer[]);
 };
