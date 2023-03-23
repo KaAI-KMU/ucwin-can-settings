@@ -36,4 +36,4 @@ UC-win/Road에서는 그 값들을 이용해 차량을 제어하는 코드를 �
     3. 브레이크 기능 추가 
 2. UC-win/Road에 CAN data 전달 및 제어
     1. [Windows socket programming](/socket-programming/)
-    2. [UC-win/Road 와 C++ 코드 간 데이터 송수신 및 제어](/ucwin-cpp/ControlBySimulator/)
+    2. [UC-win/Road 와 C++ 코드 간 데이터 송수신 및 제어](/ucwin-cpp/)
