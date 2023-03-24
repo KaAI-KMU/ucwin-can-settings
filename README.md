@@ -19,6 +19,7 @@ UC-win/Road에서는 그 값들을 이용해 차량을 제어하는 코드를 �
 3. **CAN 통신**: 차량 내 장치들이 서로 통신할 수 있게 만든 통신 규격이다.
 4. **UC-win/Road C++ SDK**: 기존의 Delphi 코드로 작성된 기능을 C++로 전환하면서 새로운 언어를 배워야 한다는 부담을 줄일 수 있다.
 5. **Github 사용법**: 이후 누군가 이 코드를 사용 시 오류가 있을때 issue를 생성해 도움을 받을 수 있을 것이다.
+6. **Arduino**: 간단한 아두이노 사용법
 
 <br>
 
@@ -26,6 +27,7 @@ UC-win/Road에서는 그 값들을 이용해 차량을 제어하는 코드를 �
 - Windows
 - Visual Studio IDE
 - C++
+- Arduino
 
 <br>
 
@@ -33,7 +35,7 @@ UC-win/Road에서는 그 값들을 이용해 차량을 제어하는 코드를 �
 1. PCAN-USB로 k7 simulator CAN data 받기
     1. [pcan-usb와 시뮬레이터 세팅](/simulator-setting/) 
     2. [pcan-usb API C++](/pcan-usb/)
-    3. 브레이크 기능 추가 
+    3. [브레이크 기능 추가](/arduino-brake/)
 2. UC-win/Road에 CAN data 전달 및 제어
     1. [Windows socket programming](/socket-programming/)
     2. [UC-win/Road 와 C++ 코드 간 데이터 송수신 및 제어](/ucwin-cpp/)
