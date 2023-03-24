@@ -74,6 +74,6 @@ pcan-basic/x64/VC_LIB 폴더 복사 - 자신이 만든 visual studio 프로젝�
 
 7번 코드는 CAN 데이터를 계속 받아주는 코드이다. 하지만 우리에게 필요없는 데이터도 계속 출력해주기 때문에 parser를 만들어 필요한 데이터만 뽑아온다.
 
-1기 선배님들의 코드를 참고해서 필요한 CAN ID가 0x50(cluster), 0x710(APM_Feedback), 0x631(AGM_Feedback), 0x711(ASM_Feedback)으로 총 4가지 경우가 있는 것을 확인했다. 일단 [받아올 수 있는 모든 값들을 코드로 작성](/pcan-usb/pcan-basic-examaple/pcan-basic-examaple/ThreadRead.cpp)했다.
+1기 선배님들의 코드를 참고해서 필요한 CAN ID가 0x50(cluster), 0x710(APM_Feedback), 0x631(AGM_Feedback), 0x711(ASM_Feedback)으로 총 4가지 경우가 있는 것을 확인했다. 일단 받아올 수 있는 모든 값들을 코드로 작성[ThreadRead.cpp](/pcan-usb/pcan-basic-examaple/pcan-basic-examaple/ThreadRead.cpp)했다.
 
 k7 엑셀표를 보면서 parsing을 진행한다. 기존에 작성한 python 코드가 있어서 그것을 참고해 c++로 포팅하는 작업만 진행했다. 문제는 parsing data가 uc-win/road의 값 범위와 달라서 필터링을 해야한다. throttle 값은 0~1 사이, steering 값은 -1 ~ 1 사이인데 기존의 코드를 사용하면 이 값 안에 들어가지 않는다. 추가 parsing은 [Windows Socket Programming Example](../socket-programming/) 에서 진행했다.

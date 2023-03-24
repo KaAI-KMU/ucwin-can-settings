@@ -22,6 +22,20 @@ C:\UCwinRoad_SDK 16.0.3\CPP\Doc\en 에 있는 APIIntroduction을 참고해서 �
 
 uc-win/road c++ api에서 내가 작성한 함수를 사용하는 방법 중 권장하는 방법은 callback에 등록하는 것이다. 버튼 클릭 콜백에 내가 만든 함수를 등록하면 여러 함수를 동시에 실행할 수 있는 기능을 제공하고 있다. 만약 callback에 등록하지 않고 바로 사용하면 프로그램이 새로운 thread를 열지 않고 while문을 돌기 때문에 귀찮더라도 callback을 사용해야한다.
 
+콜백 예시로 아래 코드를 보면 RibbonMenu를 클릭할 때 callback OnButtonControlCarClick이라는 함수를 실행한다.
+
+```cpp
+Cb_RibbonMenuItemOnClick callback2 = 
+        std::bind(&ControlBySimulator::OnButtonControlCarClick, this);
+```
+
+다음 함수를 보자. 이전과 달리 placeholder가 있는데 이는 함수에 필요한 파라미터 개수이다.
+
+```cpp
+Cb_TransientOnBeforeCalculateMovement callback1 = 
+        std::bind(&ControlBySimulator::OnVehicleBeforeCalculateMovement, this, std::placeholders::_1, std::placeholders::_2);
+```
+
 ## Step 4: Parsing CAN Data
 
 CAN 데이터를 parsing해서 사람이 보기 쉽게 double값으로 변환해준다. [Windows Socket Programming Example](../socket-programming/can-socket/can-socket-client/Client.cpp) 에서 작성한 parsing code를 그대로 사용한다.
