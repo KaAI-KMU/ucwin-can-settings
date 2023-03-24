@@ -21,8 +21,8 @@
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
-    <ProjectGuid>{bf2942b0-6cbf-4eeb-a3fd-d92377785ea9}</ProjectGuid>
-    <RootNamespace>cansocketserver</RootNamespace>
+    <ProjectGuid>{efd34e30-6d1f-4f37-bfb6-3597b2cecf38}</ProjectGuid>
+    <RootNamespace>arduinocppexample</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -101,7 +101,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
-      <SDLCheck>false</SDLCheck>
+      <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
     </ClCompile>
@@ -127,20 +127,11 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="can-socket-server.cpp" />
+    <ClCompile Include="main.cpp" />
     <ClCompile Include="Serial.cpp" />
-    <ClCompile Include="stdafx.cpp" />
-    <ClCompile Include="ThreadRead.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="PCANBasic.h" />
     <ClInclude Include="Serial.h" />
-    <ClInclude Include="stdafx.h" />
-    <ClInclude Include="targetver.h" />
-    <ClInclude Include="ThreadRead.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <Library Include="VC_LIB\PCANBasic.lib" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

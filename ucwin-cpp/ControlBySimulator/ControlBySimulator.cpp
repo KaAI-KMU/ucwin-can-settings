@@ -100,14 +100,22 @@ void ControlBySimulator::AddControlledInstance(F8TransientCarInstanceProxy inst)
 {
     VehicleData data;
     data.proxy = inst;
+
     Cb_TransientOnBeforeCalculateMovement callback1 = 
         std::bind(&ControlBySimulator::OnVehicleBeforeCalculateMovement, this, std::placeholders::_1, std::placeholders::_2);
     data.cbHandleOnBeforeCalculateMovement = 
         inst->RegisterCallbackOnBeforeCalculateMovement(callback1);
+
     Cb_TransientOnBeforeCalculateMovement callback2 =
         std::bind(&ControlBySimulator::ReceiveCANData, this);
     data.cbReceiveCANData =
         inst->RegisterCallbackOnBeforeCalculateMovement(callback2);
+
+    Cb_TransientOnBeforeCalculateMovement callback3 =
+        std::bind(&ControlBySimulator::ReceiveBrakeData, this);
+    data.cbReceiveBrakeData =
+        inst->RegisterCallbackOnBeforeCalculateMovement(callback3);
+
     vehicleDataDict.insert(std::make_pair(inst->GetID(), data));
 }
 
@@ -138,6 +146,7 @@ void ControlBySimulator::OnButtonGetCANDataClick()
 {
     InitializeSock();
     ConnectToServer();
+    InitializeSerial();
 }
 
 void ControlBySimulator::InitializeSock()
@@ -221,7 +230,7 @@ void ControlBySimulator::Parser710(char buffer[])
         tmpSteer = ~tmp3 / 10;
     }
     
-    tmpSteer = (tmpSteer + 6222) / 1000; // 큰 수를 나눌수록 핸들 감도 낮아짐
+    tmpSteer = (tmpSteer + 6222) / 700; // 큰 수를 나눌수록 핸들 감도 낮아짐
     if (tmpSteer < 1 && tmpSteer > -1) {
         mSteering = -tmpSteer;
     }
@@ -238,4 +247,21 @@ void ControlBySimulator::Parser711(char buffer[])
         if (tmpThrottle < 1)
             mThrottle = tmpThrottle;
     }
+}
+
+void ControlBySimulator::InitializeSerial()
+{
+    SP = new Serial("\\\\.\\COM3");
+
+    /*if (SP->IsConnected())
+        std::cout << "Arduino connected" << std::endl;*/
+}
+
+void ControlBySimulator::ReceiveBrakeData()
+{
+    readResult = SP->ReadData(brakeData, dataLength);
+    brakeData[readResult] = 0;
+    double brake = std::atof(brakeData);
+    if (brake < 1 && brake > 0)
+        mBrake = brake;
 }

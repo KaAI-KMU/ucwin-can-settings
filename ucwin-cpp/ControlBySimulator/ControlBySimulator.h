@@ -1,6 +1,7 @@
 #pragma once
 #include "F8API.h"
 #include "pch.h"
+#include "Serial.h"
 #include <map>
 #include <iostream>
 #include <memory>
@@ -13,6 +14,7 @@ struct VehicleData {
 	F8TransientInstanceProxy proxy;
 	void* cbHandleOnBeforeCalculateMovement;
 	void* cbReceiveCANData;
+	void* cbReceiveBrakeData;
 	double time = 0.0;
 	double steering = 0.0;
 	double throttle = 0.0;
@@ -40,10 +42,16 @@ private:
 
 	double mSteering = 0.0;
 	double mThrottle = 0.0;
-	double mBrake    = 0.0;
 	double tmpSteer = 0.0;
 	double tmpThrottle = 0.0;
-	
+
+	// serial member
+	double mBrake    = 0.0;
+	Serial* SP;
+	char brakeData[256] = "";
+	int dataLength = 255;
+	int readResult = 0;
+
 public:
 	ControlBySimulator();
 	~ControlBySimulator();
@@ -52,6 +60,7 @@ public:
 	void StopProgram();
 
 private:
+	// callback control car
 	void OnButtonControlCarClick();
 	void OnTransientDeleted(F8TransientInstanceProxy instance);
 	void RemoveControlledInstance(F8TransientCarInstanceProxy inst);
@@ -59,6 +68,7 @@ private:
 	void OnVehicleBeforeCalculateMovement(double dTime, F8TransientInstanceProxy instance);
 	void ControlVehicle(F8TransientCarInstanceProxy& proxyCar, double time);
 
+	// callback get CAN data
 	void OnButtonGetCANDataClick();
 	void InitializeSock();
 	void ConnectToServer();
@@ -67,4 +77,8 @@ private:
 	void DataParser(int id, char buffer[]);
 	void Parser710(char buffer[]);
 	void Parser711(char buffer[]);
+
+	// callback get Brake data
+	void InitializeSerial();
+	void ReceiveBrakeData();
 };
