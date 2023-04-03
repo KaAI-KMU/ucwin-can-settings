@@ -128,7 +128,7 @@ void ControlBySimulator::OnVehicleBeforeCalculateMovement(double dTime, F8Transi
     }
 }
 
-void ControlBySimulator::ControlVehicle(F8TransientCarInstanceProxy& proxyCar, double time)
+void ControlBySimulator::ControlVehicle(F8TransientCarInstanceProxy proxyCar, double time)
 {
     decltype(vehicleDataDict)::iterator itr;
     itr = vehicleDataDict.find(proxyCar->GetID());
@@ -218,35 +218,64 @@ void ControlBySimulator::DataParser(int id, char buffer[])
 
 void ControlBySimulator::Parser710(char buffer[])
 {
-    int tmp1 = buffer[1];
-    int tmp2 = buffer[2];
-    int tmp3 = tmp2 * 256 + tmp1;
-    
-    tmp3 = (double)tmp3;
-    if (tmp3 < 1000)
-        tmpSteer = tmp3 / 10;
+    // 0 ~ 255
+    unsigned char byte1 = static_cast<unsigned char>(buffer[1] & 0xFF);
+    unsigned char byte2 = static_cast<unsigned char>(buffer[2] & 0xFF);
+
+    // Steering값 하나로 합치기
+    // unsigned short range: 0 ~ 65535
+    unsigned short value = (byte2 << 8) | byte1;
+    //std::cout << "value: " << value << std::endl;
+
+    /// byte1이 0~255까지 돌면 byte2가 1 증가
+    /// +-90도 기준으로 62825 ~ 60947
+    /// 중간값은 61886
+    /// 값은 실험할때마다 달라지므로 사용시기에 따라 달라질 수 있음 (2023.04.03 기준 정문규)
+    /// uc-win에서 steering은 -1 에서 1 사이의 값만 받기 때문에 변경
+    /// 60947 ~ 62825 -> -1 ~ 1
+    /// 왼쪽을 -1, 오른쪽을 1로 설정하기 때문에 마지막 mSteering에 -1 추가
+    const unsigned short middle = 61886;
+    const unsigned short diff = 939;
+    if (value > 62886) {
+		mSteering = -1.0;
+	}
+    else if (value < 60826) {
+		mSteering = 1.0;
+	}
     else {
-        tmp3 = tmp3 ^ 0b1111111111111111;
-        tmpSteer = ~tmp3 / 10;
-    }
-    
-    tmpSteer = (tmpSteer + 6222) / 700; // 큰 수를 나눌수록 핸들 감도 낮아짐
-    if (tmpSteer < 1 && tmpSteer > -1) {
-        mSteering = -tmpSteer;
-    }
+		mSteering = -(static_cast<double>(value) - middle) / diff;
+	}
+    //std::cout << "steering: " << mSteering << std::endl;
 }
 
 void ControlBySimulator::Parser711(char buffer[])
 {
-    int tmp1 = buffer[5];
-    int tmp2 = buffer[6];
-    int tmp3 = tmp2 * 256 + tmp1;
-    
-    if (tmp3 > 610) {
-        tmpThrottle = ((double)tmp3 - 610) / (3444 - 610);
-        if (tmpThrottle < 1)
-            mThrottle = tmpThrottle;
+    unsigned char byte1 = static_cast<unsigned char>(buffer[5] & 0xFF);
+    unsigned char byte2 = static_cast<unsigned char>(buffer[6] & 0xFF);
+
+    // Throttle값 하나로 합치기
+    // unsigned short range: 0 ~ 65535
+    unsigned short value = (byte2 << 8) | byte1;
+    // std::cout << "value: " << value << std::endl;
+
+    /// Throttle 범위가 들쭉날쭉하기 때문에 현재 기준으로 작성 (2023.04.03 기준 정문규)
+    /// 620 ~ 3480 이 범위 밖은 0 또는 1 처리
+    /// steering과 마찬가지로 0 ~ 1로 변경
+    const unsigned short min = 620;
+    const unsigned short max = 3480;
+    const unsigned short diff = max - min;
+    if (value < 620)
+    {
+        mThrottle = 0;
     }
+    else if (value > 3480)
+    {
+        mThrottle = 1;
+    }
+    else {
+        mThrottle = (static_cast<double>(value) - min) / diff;
+    }
+    // std::cout << "mThrottle: " << mThrottle << std::endl;
 }
 
 void ControlBySimulator::InitializeSerial()

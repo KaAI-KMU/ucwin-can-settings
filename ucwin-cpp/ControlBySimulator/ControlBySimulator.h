@@ -66,7 +66,7 @@ private:
 	void RemoveControlledInstance(F8TransientCarInstanceProxy inst);
 	void AddControlledInstance(F8TransientCarInstanceProxy inst);
 	void OnVehicleBeforeCalculateMovement(double dTime, F8TransientInstanceProxy instance);
-	void ControlVehicle(F8TransientCarInstanceProxy& proxyCar, double time);
+	void ControlVehicle(F8TransientCarInstanceProxy proxyCar, double time);
 
 	// callback get CAN data
 	void OnButtonGetCANDataClick();
