@@ -2,12 +2,13 @@
 
 ThreadRead::ThreadRead()
 { 
+	/// Window socket initialization
+	/// 서버를 시작하는 단계
 	InitializeWinsock();
 	CreateSock();
 	SetServer();
 	BindSock();
 	AcceptConnection();
-	//ReceiveData();
 
 	ShowConfigurationHelp(); // Shows information about this sample
 	ShowCurrentConfiguration(); // Shows the current parameters configuration
@@ -488,8 +489,8 @@ void ThreadRead::ReceiveData()
 void ThreadRead::SendData(TPCANMsg msg)
 {
 	/// Send data to client
-	/// buffer = Data + ID
-	const int bufferSize = sizeof(msg.DATA) + sizeof(msg.ID);
+	/// buffer = Data + ID + Length
+	const size_t bufferSize = sizeof(msg.DATA) + sizeof(msg.ID);
 	char buffer[bufferSize];
 	memcpy(buffer, &msg.DATA, sizeof(msg.DATA));
 	memcpy(buffer + sizeof(msg.DATA), &msg.ID, sizeof(msg.ID));

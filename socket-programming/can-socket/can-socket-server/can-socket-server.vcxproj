@@ -128,13 +128,11 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="can-socket-server.cpp" />
-    <ClCompile Include="Serial.cpp" />
     <ClCompile Include="stdafx.cpp" />
     <ClCompile Include="ThreadRead.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="PCANBasic.h" />
-    <ClInclude Include="Serial.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="targetver.h" />
     <ClInclude Include="ThreadRead.h" />

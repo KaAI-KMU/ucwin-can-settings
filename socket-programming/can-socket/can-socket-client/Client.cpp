@@ -48,6 +48,7 @@ void Client::ReceiveData()
         exit(EXIT_FAILURE);
     }
     std::string id = GetIDString(buffer);
+    std::cout << "Client: " << GetIDString(buffer) << " " << GetDataString(buffer) << std::endl;
     
     switch (std::stoi(id)) {
     case 710:
@@ -55,6 +56,8 @@ void Client::ReceiveData()
         break;
     case 711:
         Parser711(buffer);
+        break;
+    case 50:
         break;
     }
 }
@@ -68,53 +71,75 @@ std::string Client::GetIDString(char buffer[])
         sprintf_s(strTemp, sizeof(strTemp), "%X", buffer[i]);
         id.append(strTemp);
     }
+
     return id;
+}
+
+std::string Client::GetDataString(char buffer[])
+{
+    char strTemp[MAX_PATH] = { 0 };
+    std::string result = "";
+    for (int i = 0; i < 10; i++)
+    {
+        sprintf_s(strTemp, sizeof(strTemp), "%02X ", buffer[i]);
+        result.append(strTemp);
+    }
+
+    return result;
 }
 
 void Client::Parser710(char buffer[])
 {
-    int tmp1 = buffer[1];
-    int tmp2 = buffer[2];
-    int tmp3 = tmp2 * 256 + tmp1;
+    // 0 ~ 255
+    unsigned char byte1 = static_cast<unsigned char>(buffer[1] & 0xFF);
+    unsigned char byte2 = static_cast<unsigned char>(buffer[2] & 0xFF);
 
-    tmp3 = (double)tmp3;
+    // Steering값 하나로 합치기
+    // unsigned short range: 0 ~ 65535
+    unsigned short value = (byte2 << 8) | byte1;
+    //std::cout << "value: " << value << std::endl;
 
-    if (tmp3 < 1000)
-        mSteering = tmp3 / 10;
-    else {
-        tmp3 = tmp3 ^ 0b1111111111111111;
-        mSteering = ~tmp3 / 10;
-    }
-    mSteering = (mSteering + 6222) / 1000;
-    std::cout << "ID: 710 steering: " << mSteering << std::endl;
-    // logging uc-win/road parser
-    /*vecSteer.push_back((mSteering + 6222) / 100);
-    auto maxSteering = std::max_element(vecSteer.begin(), vecSteer.end());
-    auto minSteering = std::min_element(vecSteer.begin(), vecSteer.end());
-
-    std::cout << "max steer: " << *maxSteering << std::endl;
-    std::cout << "min steer: " << *minSteering << std::endl;*/
+    /// byte1이 0~255까지 돌면 byte2가 1 증가
+    /// +-90도 기준으로 62825 ~ 60947
+    /// 중간값은 61886
+    /// 값은 실험할때마다 달라지므로 사용시기에 따라 달라질 수 있음 (2023.04.03 기준 정문규)
+    /// uc-win에서 steering은 -1 에서 1 사이의 값만 받기 때문에 변경
+    /// 60947 ~ 62825 -> -1 ~ 1
+    /// 왼쪽을 -1, 오른쪽을 1로 설정하기 때문에 마지막 mSteering에 -1 추가
+    const unsigned short middle = 61886;
+    const unsigned short diff = 939;
+    mSteering = -(static_cast<double>(value) - middle) / diff;
+    //std::cout << "steering: " << mSteering << std::endl;
 }
 
 void Client::Parser711(char buffer[])
 {
-    int tmp1 = buffer[5];
-    int tmp2 = buffer[6];
-    mThrottle = tmp2 * 256 + tmp1;
+    unsigned char byte1 = static_cast<unsigned char>(buffer[5] & 0xFF);
+    unsigned char byte2 = static_cast<unsigned char>(buffer[6] & 0xFF);
 
-    if (mThrottle > 610) {
-        mThrottle = round((mThrottle - 610) / (3444 - 610) * 100)/100;
-    }
-    std::cout << "ID: 711 throttle: " << mThrottle << std::endl;
-    // logging uc-win/road parser
-    /*if (mThrottle > 600) {
-        vecThrottle.push_back(round((mThrottle - 610) / (3444 - 610) * 100) / 100);
-    }
-    auto maxThrottle = std::max_element(vecThrottle.begin(), vecThrottle.end());
-    auto minThrottle = std::min_element(vecThrottle.begin(), vecThrottle.end());
+    // Throttle값 하나로 합치기
+    // unsigned short range: 0 ~ 65535
+    unsigned short value = (byte2 << 8) | byte1;
+    // std::cout << "value: " << value << std::endl;
 
-    std::cout << "max throttle: " << *maxThrottle << std::endl;
-    std::cout << "min throttle: " << *minThrottle << std::endl;*/
+    /// Throttle 범위가 들쭉날쭉하기 때문에 현재 기준으로 작성 (2023.04.03 기준 정문규)
+    /// 620 ~ 3480 이 범위 밖은 0 또는 1 처리
+    /// steering과 마찬가지로 0 ~ 1로 변경
+    const unsigned short min = 620;
+    const unsigned short max = 3480;
+    const unsigned short diff = max - min;
+    if (value < 620)
+    {
+		mThrottle = 0;
+	}
+    else if (value > 3480)
+    {
+        mThrottle = 1;
+	}
+    else {
+        mThrottle = (static_cast<double>(value) - min) / diff;
+    }
+    // std::cout << "mThrottle: " << mThrottle << std::endl;
 }
 
 Client::~Client()

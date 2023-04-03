@@ -25,6 +25,7 @@ public:
 
 private:
     std::string GetIDString(char buffer[]);
+    std::string GetDataString(char buffer[]);
     void Parser710(char buffer[]);
     void Parser711(char buffer[]);
 };

@@ -8,6 +8,9 @@
 #include <sstream>
 #include <vector>
 #include <algorithm>
+#include <iomanip>
+#include <string>
+#include <cstdint>
 #include "targetver.h"
 
 #pragma comment(lib, "ws2_32.lib")
