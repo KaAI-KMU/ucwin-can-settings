@@ -89,8 +89,8 @@ TPCANStatus ThreadRead::ReadMessage()
 	TPCANStatus stsResult = CAN_Read(PcanHandle, &CANMsg, &CANTimeStamp);
 	if (stsResult != PCAN_ERROR_QRCVEMPTY) {
 		// We process the received message
-		ValidateId(CANMsg);
-		//ProcessMessageCan(CANMsg, CANTimeStamp);
+		//ValidateId(CANMsg);
+		ProcessMessageCan(CANMsg, CANTimeStamp);
 	}
 
 	return stsResult;
