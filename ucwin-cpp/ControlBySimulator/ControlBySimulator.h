@@ -6,6 +6,7 @@
 #include <iostream>
 #include <memory>
 #include <WinSock2.h>
+#include <WS2tcpip.h>
 #include <sstream>
 
 #pragma comment(lib, "ws2_32")
@@ -42,8 +43,6 @@ private:
 
 	double mSteering = 0.0;
 	double mThrottle = 0.0;
-	double tmpSteer = 0.0;
-	double tmpThrottle = 0.0;
 
 	// serial member
 	double mBrake    = 0.0;

@@ -48,6 +48,9 @@ void ControlBySimulator::StartProgram()
 
 void ControlBySimulator::StopProgram()
 {
+    F8TrafficSimulationProxy traffic = g_applicationServices->GetSimulationCore()->GetTrafficSimulation();
+    traffic->UnregisterEventTransientObjectDeleted(p_cbHandleTransientDeleted);
+
     ribbonButton1->UnsetCallbackOnClick(p_cbHandleButtonClick1);
     ribbonButton2->UnsetCallbackOnClick(p_cbHandleButtonClick2);
     ribbonGroup->DeleteControl(ribbonButton1);
@@ -92,6 +95,8 @@ void ControlBySimulator::RemoveControlledInstance(F8TransientCarInstanceProxy in
     if (itr != vehicleDataDict.end())
     {
         inst->UnregisterCallbackOnBeforeCalculateMovement(itr->second.cbHandleOnBeforeCalculateMovement);
+        inst->UnregisterCallbackOnBeforeCalculateMovement(itr->second.cbReceiveCANData);
+        inst->UnregisterCallbackOnBeforeCalculateMovement(itr->second.cbReceiveBrakeData);
         vehicleDataDict.erase(itr);
     }
 }
@@ -165,7 +170,9 @@ void ControlBySimulator::InitializeSock()
 
     // Set server information
     server.sin_family = AF_INET;
-    server.sin_addr.s_addr = inet_addr(ipAddress.c_str()); // Set to server IP address
+    // convert newr InetPton
+    InetPton(AF_INET, ipAddress.c_str(), &server.sin_addr.s_addr);
+    // server.sin_addr.s_addr = inet_addr(ipAddress.c_str()); // Set to server IP address
     server.sin_port = htons(port); // Set to server port number
 }
 
