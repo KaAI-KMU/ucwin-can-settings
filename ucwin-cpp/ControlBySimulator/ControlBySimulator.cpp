@@ -25,17 +25,21 @@ void ControlBySimulator::StartProgram()
     ribbonGroup->SetCaption(L"Control By Simulator");
 
     ribbonButton1 = ribbonGroup->CreateButton(L"ButtonControlBySimulator1");
-    ribbonButton1->SetCaption(L"Set winsocket");
+    ribbonButton1->SetCaption(L"Get CAN Data");
     ribbonButton1->SetWidth(120);
     Cb_RibbonMenuItemOnClick callback1 = 
         std::bind(&ControlBySimulator::OnButtonGetCANDataClick, this);
+    if (ribbonButton1->IsSetCallbackOnClick())
+        return;
     p_cbHandleButtonClick1 = ribbonButton1->SetCallbackOnClick(callback1);
 
     ribbonButton2 = ribbonGroup->CreateButton(L"ButtonControlBySimulator2");
-    ribbonButton2->SetCaption(L"Control Vehicle");
+    ribbonButton2->SetCaption(L"Control Current Vehicle");
     ribbonButton2->SetWidth(120);
     Cb_RibbonMenuItemOnClick callback2 = 
         std::bind(&ControlBySimulator::OnButtonControlCarClick, this);
+    if (ribbonButton2->IsSetCallbackOnClick())
+        return;
     p_cbHandleButtonClick2 = ribbonButton2->SetCallbackOnClick(callback2);
 
     F8TrafficSimulationProxy traffic = 
@@ -59,9 +63,12 @@ void ControlBySimulator::StopProgram()
     if (ribbonTab->GetRibbonGroupsCount() == 0)
         g_applicationServices->GetMainForm()->GetMainRibbonMenu()->DeleteTab(ribbonTab);
 
-    // Close socket and clean up Winsock
-    closesocket(sock);
+    // Close the socket
+    closesocket(m_socket);
     WSACleanup();
+
+    // Stop the thread
+    StopReceiveCANDataThread();
 }
 
 void ControlBySimulator::OnTransientDeleted(F8TransientInstanceProxy instance)
@@ -72,6 +79,14 @@ void ControlBySimulator::OnTransientDeleted(F8TransientInstanceProxy instance)
         F8TransientCarInstanceProxy carProxy = 
             std::static_pointer_cast<F8TransientCarInstanceProxy_Class>(instance);
         RemoveControlledInstance(carProxy);
+    }
+}
+
+void ControlBySimulator::StopReceiveCANDataThread()
+{
+    if (receiveThread.joinable())
+    {
+        receiveThread.join();
     }
 }
 
@@ -95,8 +110,6 @@ void ControlBySimulator::RemoveControlledInstance(F8TransientCarInstanceProxy in
     if (itr != vehicleDataDict.end())
     {
         inst->UnregisterCallbackOnBeforeCalculateMovement(itr->second.cbHandleOnBeforeCalculateMovement);
-        inst->UnregisterCallbackOnBeforeCalculateMovement(itr->second.cbReceiveCANData);
-        inst->UnregisterCallbackOnBeforeCalculateMovement(itr->second.cbReceiveBrakeData);
         vehicleDataDict.erase(itr);
     }
 }
@@ -106,20 +119,10 @@ void ControlBySimulator::AddControlledInstance(F8TransientCarInstanceProxy inst)
     VehicleData data;
     data.proxy = inst;
 
-    Cb_TransientOnBeforeCalculateMovement callback1 = 
+    Cb_TransientOnBeforeCalculateMovement callback = 
         std::bind(&ControlBySimulator::OnVehicleBeforeCalculateMovement, this, std::placeholders::_1, std::placeholders::_2);
     data.cbHandleOnBeforeCalculateMovement = 
-        inst->RegisterCallbackOnBeforeCalculateMovement(callback1);
-
-    Cb_TransientOnBeforeCalculateMovement callback2 =
-        std::bind(&ControlBySimulator::ReceiveCANData, this);
-    data.cbReceiveCANData =
-        inst->RegisterCallbackOnBeforeCalculateMovement(callback2);
-
-    Cb_TransientOnBeforeCalculateMovement callback3 =
-        std::bind(&ControlBySimulator::ReceiveBrakeData, this);
-    data.cbReceiveBrakeData =
-        inst->RegisterCallbackOnBeforeCalculateMovement(callback3);
+        inst->RegisterCallbackOnBeforeCalculateMovement(callback);
 
     vehicleDataDict.insert(std::make_pair(inst->GetID(), data));
 }
@@ -129,71 +132,75 @@ void ControlBySimulator::OnVehicleBeforeCalculateMovement(double dTime, F8Transi
     if (instance->GetTransientType() == _TransientCar) {
         F8TransientCarInstanceProxy proxyCar = 
             std::static_pointer_cast<F8TransientCarInstanceProxy_Class>(instance);
-        ControlVehicle(proxyCar, dTime);
-    }
-}
-
-void ControlBySimulator::ControlVehicle(F8TransientCarInstanceProxy proxyCar, double time)
-{
-    decltype(vehicleDataDict)::iterator itr;
-    itr = vehicleDataDict.find(proxyCar->GetID());
-    if (itr != vehicleDataDict.end()) {
-
-        proxyCar->SetEngineOn(true);
-        proxyCar->SetSteering(mSteering);
-        proxyCar->SetThrottle(mThrottle);
-        proxyCar->SetBrake(mBrake);
-        proxyCar->SetClutch(0.0);
+        decltype(vehicleDataDict)::iterator itr;
+        itr = vehicleDataDict.find(proxyCar->GetID());
+        if (itr != vehicleDataDict.end()) {
+            proxyCar->SetEngineOn(true);
+            proxyCar->SetSteering(mSteering);
+            proxyCar->SetThrottle(mThrottle);
+            proxyCar->SetBrake(mBrake);
+            proxyCar->SetClutch(0.0);
+        }
     }
 }
 
 void ControlBySimulator::OnButtonGetCANDataClick()
 {
     InitializeSock();
-    ConnectToServer();
-    InitializeSerial();
+    StartReceiveCANDataThread();
 }
 
 void ControlBySimulator::InitializeSock()
 {
     // Initialize Winsock
-    if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0) {
-        std::cerr << "WSAStartup failed" << std::endl;
-        exit(EXIT_FAILURE);
+    if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0)
+    {
+        std::cout << "WSAStartup failed" << std::endl;
     }
 
     // Create a socket
-    if ((sock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP)) == INVALID_SOCKET) {
-        std::cerr << "Socket creation failed" << std::endl;
-        exit(EXIT_FAILURE);
+    m_socket = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+    if (m_socket == INVALID_SOCKET)
+    {
+        std::cout << "Error creating socket" << std::endl;
     }
 
-    // Set server information
-    server.sin_family = AF_INET;
-    // convert newr InetPton
-    InetPton(AF_INET, ipAddress.c_str(), &server.sin_addr.s_addr);
-    // server.sin_addr.s_addr = inet_addr(ipAddress.c_str()); // Set to server IP address
-    server.sin_port = htons(port); // Set to server port number
+    // Bind the socket to any address and the specified port.
+    ZeroMemory(&receiverAddr, sizeof(receiverAddr));
+    receiverAddr.sin_family = AF_INET;
+    receiverAddr.sin_port = htons(LOCALPORT);
+    receiverAddr.sin_addr.s_addr = htonl(INADDR_ANY);
+
+    retVal = bind(m_socket, (SOCKADDR*)&receiverAddr, sizeof(receiverAddr));
+    if (retVal == SOCKET_ERROR)
+    {
+        std::cout << "Error binding socket" << std::endl;
+    }
 }
 
-void ControlBySimulator::ConnectToServer()
+void ControlBySimulator::StartReceiveCANDataThread()
 {
-    // Connect to server
-    if (connect(sock, (sockaddr*)&server, sizeof(server)) < 0) {
-        std::cerr << "Connection failed" << std::endl;
-        exit(EXIT_FAILURE);
-    }
+    receiveThread = std::thread([&]() {
+        while (true)
+        {
+            ReceiveCANData();
+        }
+        });
 }
 
 void ControlBySimulator::ReceiveCANData()
 {
-    // Receive data from server
+    // Receive data until the peer closes the connection
     char buffer[1024] = { 0 };
-    if (recv(sock, buffer, 1024, 0) < 0) {
-        std::cerr << "Receiving data failed" << std::endl;
-        exit(EXIT_FAILURE);
+    sockaddr_in peerAddr;
+    int peerAddrLen = sizeof(peerAddr);
+    retVal = recvfrom(m_socket, buffer, BUFSIZE, 0, (SOCKADDR*)&peerAddr, &peerAddrLen);
+    if (retVal == SOCKET_ERROR)
+    {
+        std::cout << "Error receiving data" << std::endl;
     }
-    else {
+    else
+    {
         std::string id = GetIDString(buffer);
         DataParser(std::stoi(id), buffer);
     }
@@ -214,6 +221,9 @@ std::string ControlBySimulator::GetIDString(char buffer[])
 void ControlBySimulator::DataParser(int id, char buffer[])
 {
     switch (id) {
+    case 111: // brake
+        Parser111(buffer);
+		break;
     case 710: // steering
         Parser710(buffer);
         break;
@@ -221,6 +231,13 @@ void ControlBySimulator::DataParser(int id, char buffer[])
         Parser711(buffer);
         break;
     }
+}
+
+void ControlBySimulator::Parser111(char buffer[])
+{
+    unsigned char byte1 = static_cast<unsigned char>(buffer[0] & 0xFF);
+    double decimalValue = double(byte1) / 255.0;
+    mBrake = decimalValue;
 }
 
 void ControlBySimulator::Parser710(char buffer[])
@@ -235,24 +252,25 @@ void ControlBySimulator::Parser710(char buffer[])
     //std::cout << "value: " << value << std::endl;
 
     /// byte1이 0~255까지 돌면 byte2가 1 증가
-    /// +-90도 기준으로 62825 ~ 60947
-    /// 중간값은 61886
-    /// 값은 실험할때마다 달라지므로 사용시기에 따라 달라질 수 있음 (2023.04.03 기준 정문규)
+    /// +-90도 기준으로 2700 ~ 840
+    /// 중간값은 1770
+    /// 값은 실험할때마다 달라지므로 사용시기에 따라 달라질 수 있음 (2023.04.05 기준 정문규)
     /// uc-win에서 steering은 -1 에서 1 사이의 값만 받기 때문에 변경
-    /// 60947 ~ 62825 -> -1 ~ 1
+    /// 840 ~ 2700 -> -1 ~ 1
     /// 왼쪽을 -1, 오른쪽을 1로 설정하기 때문에 마지막 mSteering에 -1 추가
-    const unsigned short middle = 61886;
-    const unsigned short diff = 939;
-    if (value > 62886) {
-		mSteering = -1.0;
-	}
-    else if (value < 60826) {
-		mSteering = 1.0;
-	}
+    const unsigned short middle = 1770;
+    const unsigned short max = 2700;
+    const unsigned short diff = max - middle;
+    if (value > 2700) {
+        mSteering = -1.0;
+    }
+    else if (value < 840) {
+        mSteering = 1.0;
+    }
     else {
-		mSteering = -(static_cast<double>(value) - middle) / diff;
-	}
-    //std::cout << "steering: " << mSteering << std::endl;
+        mSteering = -(static_cast<double>(value) - middle) / diff;
+    }
+    // std::cout << "steering: " << mSteering << std::endl;
 }
 
 void ControlBySimulator::Parser711(char buffer[])
@@ -283,21 +301,4 @@ void ControlBySimulator::Parser711(char buffer[])
         mThrottle = (static_cast<double>(value) - min) / diff;
     }
     // std::cout << "mThrottle: " << mThrottle << std::endl;
-}
-
-void ControlBySimulator::InitializeSerial()
-{
-    SP = new Serial("\\\\.\\COM3");
-
-    /*if (SP->IsConnected())
-        std::cout << "Arduino connected" << std::endl;*/
-}
-
-void ControlBySimulator::ReceiveBrakeData()
-{
-    readResult = SP->ReadData(brakeData, dataLength);
-    brakeData[readResult] = 0;
-    double brake = std::atof(brakeData);
-    if (brake < 1 && brake > 0)
-        mBrake = brake;
 }

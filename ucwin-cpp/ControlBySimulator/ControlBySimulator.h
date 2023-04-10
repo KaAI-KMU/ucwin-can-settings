@@ -1,22 +1,20 @@
 #pragma once
 #include "F8API.h"
 #include "pch.h"
-#include "Serial.h"
 #include <map>
 #include <iostream>
 #include <memory>
 #include <WinSock2.h>
 #include <WS2tcpip.h>
 #include <sstream>
+#include <thread>
+#include <future>
 
 #pragma comment(lib, "ws2_32")
 
 struct VehicleData {
 	F8TransientInstanceProxy proxy;
 	void* cbHandleOnBeforeCalculateMovement;
-	void* cbReceiveCANData;
-	void* cbReceiveBrakeData;
-	double time = 0.0;
 	double steering = 0.0;
 	double throttle = 0.0;
 	double brake = 0.0;
@@ -34,22 +32,20 @@ private:
 
 	std::map<int, VehicleData> vehicleDataDict;
 
-	// winsock member
-	WSADATA wsaData;
-	SOCKET sock;
-	sockaddr_in server;
-	const int port = 8888;
-	const std::string ipAddress = "127.0.0.1";
-
 	double mSteering = 0.0;
 	double mThrottle = 0.0;
-
-	// serial member
 	double mBrake    = 0.0;
-	Serial* SP;
-	char brakeData[256] = "";
-	int dataLength = 255;
-	int readResult = 0;
+
+	// socket member
+	const int LOCALPORT = 9000;
+	sockaddr_in receiverAddr;
+	WSADATA wsaData;
+	SOCKET m_socket;
+	int retVal;
+	std::thread receiveThread;
+
+	// Set up the sockaddr structure
+	const int BUFSIZE = 1024;
 
 public:
 	ControlBySimulator();
@@ -65,19 +61,18 @@ private:
 	void RemoveControlledInstance(F8TransientCarInstanceProxy inst);
 	void AddControlledInstance(F8TransientCarInstanceProxy inst);
 	void OnVehicleBeforeCalculateMovement(double dTime, F8TransientInstanceProxy instance);
-	void ControlVehicle(F8TransientCarInstanceProxy proxyCar, double time);
 
 	// callback get CAN data
 	void OnButtonGetCANDataClick();
 	void InitializeSock();
-	void ConnectToServer();
+	void StartReceiveCANDataThread();
 	void ReceiveCANData();
+	void StopReceiveCANDataThread();
+
+	// Parsing CAN data
 	std::string GetIDString(char buffer[]);
 	void DataParser(int id, char buffer[]);
+	void Parser111(char buffer[]);
 	void Parser710(char buffer[]);
 	void Parser711(char buffer[]);
-
-	// callback get Brake data
-	void InitializeSerial();
-	void ReceiveBrakeData();
 };
