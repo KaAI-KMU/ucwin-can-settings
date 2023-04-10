@@ -5,7 +5,7 @@ const int potmeterPin = A0;
 double potmeterVal = 0;
 
 MCP_CAN CAN0(10);     // Set CS to pin 10
-byte data[1] = {0x00};
+byte data[8] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
 
 void setup()
 {
@@ -36,7 +36,7 @@ void loop() {
     hexString = "0" + hexString;
   }
   data[0] = strtol(hexString.c_str(), NULL, 16);
-  
+
   /*
   // hex to decimal
   int a = data[0];
@@ -45,13 +45,13 @@ void loop() {
   Serial.println(b); 
   */
 
-  // send data:  ID = 0x100, Standard CAN Frame, Data length = 1 bytes, 'data' = array of data bytes to send
-  byte sndStat = CAN0.sendMsgBuf(0x100, 0, 1, data);
+  // send data:  ID = 0x111, Standard CAN Frame, Data length = 8 bytes, 'data' = array of data bytes to send
+  byte sndStat = CAN0.sendMsgBuf(0x111, 0, 8, data);
 
   if (sndStat == CAN_OK) {
     Serial.println("Message Sent Successfully!");
   } else {
     Serial.println("Error Sending Message...");
   }
-  // delay(1000);   // send data per 1000ms
+  delay(20);   // send data per 20ms
 }
