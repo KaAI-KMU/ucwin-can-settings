@@ -1,5 +1,5 @@
 # PCAN-USB
-PCAN-USB의 C++ 예제를 실행해보고 시뮬레이터 CAN 데이터를 parsing 한다.
+이제 PEAK 사가 제공하는 API를 활용해서 CAN data를 c++, python 등 여러 언어로 받을 수 있다.
 
 ## Step 1: Download PCAN-Basic API
 
@@ -64,17 +64,16 @@ Data: 12 0B 0E 4F 0B FB 07 27
 ----------------------------------------------------------
 ```
 
-## Step 3: Include DLL in Visual Studio
+## Step 3: Create new project for PCAN-Basic
 
-pcan-basic/x64/VC_LIB 폴더 복사 - 자신이 만든 visual studio 프로젝트 디렉토리에 붙여넣기 - visual studio - 프로젝트 우클릭 - 추가 - 기존 항목 - VC_LIB/PCANBasic.lib 추가
+샘플코드를 이용해서 새로운 프로젝트를 생성한다. 이를 위해서는 api를 프로젝트에 불러와야한다. 먼저 새로운 빈 프로젝트를 생성한다.
 
-[PCANBasic.dll 과 PCANBasic.lib를 불러오기](https://biji-jjigae.tistory.com/48) 위해 프로젝트에 불러온다.
+pcan-basic/x64/VC_LIB 폴더 복사 - 자신이 만든 visual studio 프로젝트 디렉토리에 붙여넣기 - visual studio - 솔루션 탐색기(왼쪽사이드) - 프로젝트 우클릭 - 추가 - 기존 항목 - VC_LIB/PCANBasic.lib 추가
 
-## Step 4: Parcing CAN data
+## Step 4: Send CAN data
 
-7번 코드는 CAN 데이터를 계속 받아주는 코드이다. 하지만 우리에게 필요없는 데이터도 계속 출력해주기 때문에 parser를 만들어 필요한 데이터만 뽑아온다.
+이렇게 새로만든 프로젝트에 위의 7번 예제를 그대로 사용해서 정상 작동하는 지 확인한다. 간단하게 코드를 복사 붙여넣기 해서 돌려보면 똑같이 실행된다.
 
-1기 선배님들의 코드를 참고해서 필요한 CAN ID가 0x50(cluster), 0x710(APM_Feedback), 0x631(AGM_Feedback), 0x711(ASM_Feedback)으로 총 4가지 경우가 있는 것을 확인했다. 일단 받아올 수 있는 모든 값들을 코드로 작성했다.
-- [ThreadRead.cpp](/pcan-usb/pcan-basic-examaple/pcan-basic-examaple/ThreadRead.cpp)
+~~k7 엑셀표를 보면서 parsing을 진행한다. 기존에 작성한 python 코드가 있어서 그것을 참고해 c++로 포팅하는 작업만 진행했다. 문제는 parsing data가 uc-winroad의 값 범위와 달라서 필터링을 해야한다. throttle 값은 0~1 사이, steering 값은 -1 ~ 1 사이인데 기존의 코드를 사용하면 이 값 안에 들어가지 않는다. 추가 parsing은 [Windows Socket Programming Example](../socket-programming/) 에서 진행했다.~~
 
-k7 엑셀표를 보면서 parsing을 진행한다. 기존에 작성한 python 코드가 있어서 그것을 참고해 c++로 포팅하는 작업만 진행했다. 문제는 parsing data가 uc-win/road의 값 범위와 달라서 필터링을 해야한다. throttle 값은 0~1 사이, steering 값은 -1 ~ 1 사이인데 기존의 코드를 사용하면 이 값 안에 들어가지 않는다. 추가 parsing은 [Windows Socket Programming Example](../socket-programming/) 에서 진행했다.
+기존 선배님들이 짠 코드들을 그대로 사용한 결과 이상한 값이 나와서 새로 다시 짰다. parser는 이 다음인 [Windows Socket Programming Example](../socket-programming/) 에서 진행한다. 이곳에서는 간단하게 데이터를 제대로 받는 지 확인만 한다.
