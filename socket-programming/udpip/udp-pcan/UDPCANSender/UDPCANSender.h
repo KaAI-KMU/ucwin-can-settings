@@ -46,7 +46,7 @@ private:
 	bool m_ThreadRun;
 
 	// UDP var
-	const std::string REMOTEIP = "255.255.255.255";
+	const std::string REMOTEIP = "127.0.0.1";
 	const int REMOTEPORT = 9000;
 	WSADATA wsaData;
 	SOCKET m_socket;

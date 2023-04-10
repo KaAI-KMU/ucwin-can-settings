@@ -17,6 +17,7 @@ private:
 	void Close();
 	std::string GetIDString(char buffer[]);
 	std::string GetDataString(char buffer[]);
+	void Parser111(char buffer[]);
 	void Parser710(char buffer[]);
 	void Parser711(char buffer[]);
 	double mSteering = 0;

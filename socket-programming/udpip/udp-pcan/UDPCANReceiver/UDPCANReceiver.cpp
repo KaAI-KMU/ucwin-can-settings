@@ -57,6 +57,9 @@ void UDPCANReceiver::Receive()
 		std::cout << "ID: " << id << " " << GetDataString(buffer) << std::endl;
 
 		switch (std::stoi(id)) {
+		case 111:
+			Parser111(buffer);
+			break;
 		case 710:
 			Parser710(buffer);
 			break;
@@ -99,6 +102,14 @@ std::string UDPCANReceiver::GetDataString(char buffer[])
 	}
 
 	return result;
+}
+
+void UDPCANReceiver::Parser111(char buffer[])
+{
+	unsigned char byte1 = static_cast<unsigned char>(buffer[0] & 0xFF);
+	double decimalValue = double(byte1) / 255.0;
+	mBrake = decimalValue;
+	std::cout << "mBrake: " << decimalValue << std::endl;
 }
 
 void UDPCANReceiver::Parser710(char buffer[])

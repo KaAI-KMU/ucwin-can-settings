@@ -99,7 +99,8 @@ void UDPCANSender::ValidateId(TPCANMsg msg)
 {
 	const UINT32 id = msg.ID;
 	if (id == 0x710 ||
-		id == 0x711) {
+		id == 0x711 ||
+		id == 0x111) {
 		Send(msg);
 	}
 }
